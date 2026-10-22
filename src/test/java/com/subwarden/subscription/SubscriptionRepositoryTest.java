@@ -9,6 +9,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,6 +22,18 @@ public class SubscriptionRepositoryTest {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    private Subscription buildSubscription(String name, LocalDate nextPaymentDate, SubscriptionStatus status) {
+        Subscription subscription = new Subscription();
+        subscription.setName(name);
+        subscription.setPrice(new BigDecimal("10.00"));
+        subscription.setCurrency("PLN");
+        subscription.setCategory(SubscriptionCategory.OTHER);
+        subscription.setBillingCycle(BillingCycle.MONTHLY);
+        subscription.setNextPaymentDate(nextPaymentDate);
+        subscription.setStatus(status);
+        return subscription;
+    }
 
     @Test
     void shouldSaveAndReadSubscriptionFromDatabase() {
@@ -51,5 +64,27 @@ public class SubscriptionRepositoryTest {
         assertThat(found.getNextPaymentDate()).isEqualTo(LocalDate.of(2026,11,1));
         assertThat(found.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
 
+    }
+
+    @Test
+    void shouldFindOnlyActiveSubscriptionsDueInGivenRange() {
+        //GIVEN
+        LocalDate from = LocalDate.of(2026,11,1);
+        LocalDate to = LocalDate.of(2026,11,7);
+
+        subscriptionRepository.save(buildSubscription("Due on first day", from, SubscriptionStatus.ACTIVE));
+        subscriptionRepository.save(buildSubscription("Due on last day", to, SubscriptionStatus.ACTIVE));
+        subscriptionRepository.save(buildSubscription("Due too late", to.plusDays(1), SubscriptionStatus.ACTIVE));
+        subscriptionRepository.save(buildSubscription("Cancelled", from.plusDays(2), SubscriptionStatus.CANCELLED));
+        entityManager.flush();
+        entityManager.clear();
+
+        //WHEN
+        List<Subscription> result = subscriptionRepository.findByStatusAndNextPaymentDateBetween(SubscriptionStatus.ACTIVE, from, to);
+
+        //THEN
+        assertThat(result)
+                .extracting(Subscription::getName)
+                .containsExactlyInAnyOrder("Due on first day", "Due on last day");
     }
 }
