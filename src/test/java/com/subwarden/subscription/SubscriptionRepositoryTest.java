@@ -103,4 +103,23 @@ public class SubscriptionRepositoryTest {
                 .extracting(Subscription::getName)
                 .containsExactlyInAnyOrder("Due on first day", "Due on last day");
     }
+
+    @Test
+    void shouldReturnOnlySubscriptionsOfGivenUser() {
+        User other = userRepository.save(new User("other@example.com", "not-a-real-hash"));
+        LocalDate date = LocalDate.of(2026, 11, 1);
+
+        subscriptionRepository.save(buildSubscription("Mine", date, SubscriptionStatus.ACTIVE));
+        Subscription foreign = buildSubscription("Not mine", date, SubscriptionStatus.ACTIVE);
+        foreign.setUser(other);
+        subscriptionRepository.save(foreign);
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Subscription> result = subscriptionRepository.findByUserId(owner.getId());
+
+        assertThat(result)
+                .extracting(Subscription::getName)
+                .containsExactly("Mine");
+    }
 }

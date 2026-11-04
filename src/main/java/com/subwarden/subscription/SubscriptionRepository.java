@@ -8,4 +8,6 @@ import java.util.List;
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
 
     List<Subscription> findByStatusAndNextPaymentDateBetween(SubscriptionStatus status, LocalDate from, LocalDate to);
+
+    List<Subscription> findByUserId(Long userId);
 }
