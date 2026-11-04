@@ -1,7 +1,11 @@
 package com.subwarden.subscription;
 
+import com.subwarden.user.User;
+import com.subwarden.user.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.checkerframework.checker.units.qual.A;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -20,8 +24,18 @@ public class SubscriptionRepositoryTest {
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @PersistenceContext
     private EntityManager entityManager;
+
+    private User owner;
+
+    @BeforeEach
+    void setUp() {
+        owner = userRepository.save(new User("owner@example.com", "not-a-real-hash"));
+    }
 
     private Subscription buildSubscription(String name, LocalDate nextPaymentDate, SubscriptionStatus status) {
         Subscription subscription = new Subscription();
@@ -32,6 +46,7 @@ public class SubscriptionRepositoryTest {
         subscription.setBillingCycle(BillingCycle.MONTHLY);
         subscription.setNextPaymentDate(nextPaymentDate);
         subscription.setStatus(status);
+        subscription.setUser(owner);
         return subscription;
     }
 
@@ -47,6 +62,7 @@ public class SubscriptionRepositoryTest {
         subscription.setBillingCycle(BillingCycle.MONTHLY);
         subscription.setNextPaymentDate(LocalDate.of(2026,11,1));
         subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setUser(owner);
 
         Subscription saved = subscriptionRepository.save(subscription);
         entityManager.flush();

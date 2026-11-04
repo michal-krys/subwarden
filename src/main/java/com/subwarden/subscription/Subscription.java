@@ -1,5 +1,6 @@
 package com.subwarden.subscription;
 
+import com.subwarden.user.User;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -38,6 +39,10 @@ public class Subscription {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SubscriptionStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     protected Subscription() {
     }
@@ -108,5 +113,13 @@ public class Subscription {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }
