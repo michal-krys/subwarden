@@ -43,4 +43,12 @@ public class UserRepositoryTest {
        assertThatThrownBy(() -> userRepository.saveAndFlush(new User("anna@example.com", "other-hash")))
                .isInstanceOf(DataIntegrityViolationException.class);
     }
+
+    @Test
+    void shouldReportWheterEmailExists() {
+        userRepository.saveAndFlush(new User("anna@example.com", "not-a-real-hash"));
+
+        assertThat(userRepository.existsByEmail("anna@example.com")).isTrue();
+        assertThat(userRepository.existsByEmail("nobody@example.com")).isFalse();
+    }
 }
